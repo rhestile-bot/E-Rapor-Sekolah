@@ -177,7 +177,7 @@ const DEFAULT_HTML_TEMPLATE = `
   <p style="margin:0; font-size: 11pt;">{{ALAMAT_SEKOLAH|P}}</p>
 </div>
 <h3 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px;">RAPOR SISIPAN</h3>
-<table style="width: 100%; margin-bottom: 15px; font-weight: bold;">
+<table style="width: 100%; margin-bottom: 15px; font-size: 11pt; font-weight: bold; text-align: left;">
   <tr><td style="width: 80px;">Nama</td><td style="width: 10px;">:</td><td>{{NAMA_SISWA|U}}</td><td style="width: 80px;">Kelas</td><td style="width: 10px;">:</td><td>{{KELAS}}</td></tr>
   <tr><td>NISN / NIS</td><td>:</td><td>{{NISN}} / {{NIS}}</td><td>Fase / Tingkat</td><td>:</td><td>{{FASE}} / {{TINGKAT}}</td></tr>
   <tr><td>Tahun Ajaran</td><td>:</td><td>{{TAHUN_AJARAN}}</td><td>Semester</td><td>:</td><td>{{SEMESTER|P}}</td></tr>
@@ -217,8 +217,15 @@ export default function App() {
   const [predikats, setPredikats] = useState([ { id: 'p1', min: 91, max: 100, label: 'Sangat Baik' }, { id: 'p2', min: 81, max: 90, label: 'Baik' }, { id: 'p3', min: 70, max: 80, label: 'Cukup' }, { id: 'p4', min: 0, max: 69, label: 'Kurang' } ]);
 
   // --- STATES LOKAL (UI & NAVIGASI) ---
-  const [activeTA, setActiveTA] = useState('2025/2026');
-  const [activeSemester, setActiveSemester] = useState('Ganjil');
+  
+  // FIX: Menggunakan localStorage agar pilihan Tahun Ajaran & Semester tidak hilang saat di-refresh
+  const [activeTA, setActiveTA] = useState(() => localStorage.getItem('eRapor_activeTA') || '2025/2026');
+  const [activeSemester, setActiveSemester] = useState(() => localStorage.getItem('eRapor_activeSemester') || 'Ganjil');
+
+  // Menyimpan perubahan ke memori browser setiap kali user mengganti pilihan
+  useEffect(() => { localStorage.setItem('eRapor_activeTA', activeTA); }, [activeTA]);
+  useEffect(() => { localStorage.setItem('eRapor_activeSemester', activeSemester); }, [activeSemester]);
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   
@@ -287,26 +294,18 @@ export default function App() {
   // --- SETUP FIREBASE & AUTHENTICATION ---
   useEffect(() => {
     let isMounted = true;
+    
+    // Inisialisasi Firebase sederhana tanpa while-loop agar tidak menyebabkan timeout di Canvas
     const initAuth = async () => {
-      let retries = 5;
-      let delay = 1000;
-      while (retries > 0) {
-        try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-          return;
-        } catch (error) { 
-          console.error("Auth error:", error); 
-          retries -= 1;
-          if (retries === 0 && isMounted) {
-            setSystemWarning("Gagal autentikasi Firebase! Pastikan metode login 'Anonymous' telah diaktifkan di menu Authentication Firebase Anda.");
-          }
-          await new Promise(res => setTimeout(res, delay));
-          delay *= 2;
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
+      } catch (error) { 
+        console.error("Auth error:", error); 
+        if (isMounted) setSystemWarning("Gagal terhubung ke Firebase. Pratinjau mungkin berjalan dengan mode terbatas.");
       }
     };
     initAuth();
@@ -314,9 +313,10 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
        if (isMounted) {
          setDbUser(u); 
-         if (u) setIsReady(true);
+         setIsReady(true);
        }
     });
+    
     return () => {
       isMounted = false;
       unsubscribe();
@@ -480,7 +480,6 @@ export default function App() {
       let nextEnrs = [...prevEnrs];
       for (const row of rows) {
         const cols = row.split(/\t/);
-        // Harus ada 5 Kolom: NISN | Sumatif 1 | Sumatif 2 | Tercapai | Belum Tercapai
         if (cols.length >= 5) {
           const nisn = cols[0].trim().replace(/\D/g, '');
           const sumatif1 = cols[1].trim();
@@ -519,7 +518,7 @@ export default function App() {
 
     if (successCount > 0) {
       showNotification(`${successCount} data nilai & CP berhasil di-import! Silakan klik Simpan untuk menyimpan ke Database Cloud.`);
-      setCpInputMode('manual'); // Paksa ubah tampilan ke manual agar hasil import teks panjang terlihat
+      setCpInputMode('manual'); 
       setShowImportNilaiModal(false);
       setImportNilaiText('');
     } else {
@@ -643,11 +642,11 @@ export default function App() {
     let html = settings.templateHtml || '';
     html = html.replace(/outline:\s*[^;]+;/gi, ''); 
 
-    // Generate Tables
     const subUmum = subjects.filter(s => s.level === level && !s.isLokal).sort((a,b) => (a.urutan || 0) - (b.urutan || 0));
     const subLokal = subjects.filter(s => s.level === level && s.isLokal).sort((a,b) => (a.urutan || 0) - (b.urutan || 0));
     
-    let tNilaiHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black; margin-bottom: 15px; page-break-inside: auto;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 4%;">No</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 18%;">Mata Pelajaran</th><th colspan="2" style="border: 1px solid black; padding: 4px; width: 12%;">Sumatif Lingkup<br/>Materi</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 8%; background-color: #fecaca;">Nilai Akhir<br/>Sumatif</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 58%;">Capaian Kompetensi</th></tr><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th style="border: 1px solid black; padding: 4px; width: 6%;">Sumatif 1</th><th style="border: 1px solid black; padding: 4px; width: 6%;">Sumatif 2</th></tr></thead><tbody>`;
+    // PEMBARUAN: Arial 10pt dan pengembalian fungsi white-space nowrap agar huruf di tabel tidak terpotong
+    let tNilaiHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black; margin-bottom: 15px; page-break-inside: auto;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 4%;">No</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 18%;">Mata Pelajaran</th><th colspan="2" style="border: 1px solid black; padding: 4px; width: 12%; white-space: nowrap;">Sumatif Lingkup<br/>Materi</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 8%; background-color: #fecaca; white-space: nowrap;">Nilai Akhir<br/>Sumatif</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 58%;">Capaian Kompetensi</th></tr><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th style="border: 1px solid black; padding: 4px; width: 6%; white-space: nowrap;">Sumatif 1</th><th style="border: 1px solid black; padding: 4px; width: 6%; white-space: nowrap;">Sumatif 2</th></tr></thead><tbody>`;
     
     let no = 1;
     const renderRowHTML = (sub) => {
@@ -671,13 +670,13 @@ export default function App() {
     const sp = enr.specialData || { surah: [], hadist: [], doa: [], tilawah: [] };
     const fList = (arr) => { if(!arr || !Array.isArray(arr)) return '-'; const v = arr.filter(i => i.trim() !== ''); return v.length > 0 ? v.join('<br/>') : '-'; };
     
-    // PENERAPAN FONT ARIAL PADA TABEL HAFALAN
+    // PEMBARUAN: Arial 10pt
     const tHafalanHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 4px;">HAFALAN</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 4px; width: 60px; font-weight: bold; vertical-align: top;">Surah</td><td style="border: 1px solid black; padding: 4px; vertical-align: top;">${fList(sp.surah)}</td></tr><tr><td style="border: 1px solid black; padding: 4px; font-weight: bold; vertical-align: top;">Hadist</td><td style="border: 1px solid black; padding: 4px; vertical-align: top;">${fList(sp.hadist)}</td></tr><tr><td style="border: 1px solid black; padding: 4px; font-weight: bold; vertical-align: top;">Doa'</td><td style="border: 1px solid black; padding: 4px; vertical-align: top;">${fList(sp.doa)}</td></tr><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 4px;">TILAWAH</th></tr><tr><td colspan="2" style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; vertical-align: top;">${fList(sp.tilawah)}</td></tr></tbody></table>`;
 
     const abs = enr.kehadiran || { sakit: 0, izin: 0, alpa: 0 };
     const fAbs = (val) => (val && Number(val) > 0) ? `${val} hari` : '-';
     
-    // PENERAPAN FONT ARIAL PADA TABEL ABSENSI
+    // PEMBARUAN: Arial 10pt
     const tAbsensiHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 4px;">ABSENSI</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 4px;">Sakit</td><td style="border: 1px solid black; padding: 4px; text-align: center; width: 30%;">${fAbs(abs.sakit)}</td></tr><tr><td style="border: 1px solid black; padding: 4px;">Izin</td><td style="border: 1px solid black; padding: 4px; text-align: center;">${fAbs(abs.izin)}</td></tr><tr><td style="border: 1px solid black; padding: 4px;">Tanpa Keterangan</td><td style="border: 1px solid black; padding: 4px; text-align: center;">${fAbs(abs.alpa)}</td></tr></tbody></table>`;
 
     const dataMap = {
@@ -819,8 +818,6 @@ export default function App() {
     const paperW = printConfig.paperSize === 'A4' ? '210mm' : '215mm';
     const paperH = printConfig.paperSize === 'A4' ? '297mm' : '330mm';
     
-    // FIX PENTING: Margin dicetak melalui rule native CSS @page, sehingga kita mereset padding elemen ke 0
-    // agar tabel tidak terdorong keluar batas dan terpotong di sebelah kanan kertas
     const pad = `${printConfig.marginTop}mm ${printConfig.marginRight}mm ${printConfig.marginBottom}mm ${printConfig.marginLeft}mm`;
     const globalFont = raporSettings[raporTab]?.fontFamily || 'Arial, sans-serif';
 
@@ -832,8 +829,6 @@ export default function App() {
             body, html { margin: 0 !important; padding: 0 !important; background-color: #fff !important; }
             .print-wrapper { padding: 0 !important; margin: 0 !important; background: transparent !important; }
             
-            /* PENTING: Lebar fix 100% dan hapus padding agar margin diserahkan ke @page */
-            /* Ini akan mencegah tabel / outline terpotong atau kehilangan garis sebelah kanan */
             .print-page { 
               width: 100% !important; 
               max-width: 100% !important;
@@ -848,12 +843,10 @@ export default function App() {
             }
             .print-page:last-child { page-break-after: auto; }
             
-            /* FIX UNTUK ALIGNMENT GAMBAR DI PRINT */
             .print-page img { display: inline-block !important; max-width: 100%; } 
 
             .no-print { display: none !important; }
             
-            /* Menyembunyikan Watermark / Tombol / Elemen mengganggu secara ekstrim saat Print */
             ::-webkit-scrollbar { display: none !important; }
             * { scrollbar-width: none !important; }
             [class*="codesandbox"],
@@ -887,7 +880,6 @@ export default function App() {
             <div 
                key={enrId} 
                className="print-page bg-white shadow-2xl mx-auto relative overflow-visible mb-8 [&_img]:inline-block" 
-               // style dipasang font-size 11pt default agar seluruh dokumen mewarisinya
                style={{ width: paperW, minHeight: paperH, padding: pad, fontFamily: globalFont, fontSize: '11pt', boxSizing: 'border-box' }} 
                dangerouslySetInnerHTML={{ __html: compileHtmlRapor(enrId) }} 
             />
