@@ -10,7 +10,6 @@ import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken }
 import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, getDocs } from 'firebase/firestore';
 
 // --- FIREBASE INITIALIZATION ---
-// Konfigurasi manual jika dijalankan di luar environment Canvas
 const fallbackConfig = {
   apiKey: "AIzaSyDjmmR1MNrV-QKeOnI-6qQUGBDWzI4fZQ8",
   authDomain: "e-rapor-sekolah.firebaseapp.com",
@@ -288,14 +287,19 @@ export default function App() {
   const [raporViewMode, setRaporViewMode] = useState('settings'); 
   const [rekapTab, setRekapTab] = useState('SD'); 
 
-  // Definisi activeEnrollments
-  const activeEnrollments = enrollments.filter(e => e.tahunAjaran === activeTA && e.semester === activeSemester);
+  // Definisi activeEnrollments (DIPERBARUI: Hanya hitung jika data induk siswa masih ada)
+  const activeEnrollments = enrollments.filter(e => 
+    e.tahunAjaran === activeTA && 
+    e.semester === activeSemester && 
+    students.some(s => s.id === e.studentId)
+  );
 
   // --- SETUP FIREBASE & AUTHENTICATION ---
   useEffect(() => {
-    let isMounted = true;
-    
-    // Inisialisasi Firebase sederhana tanpa while-loop agar tidak menyebabkan timeout di Canvas
+    let isMounted = true; 
+    // Mengubah judul tab browser secara otomatis
+    document.title = "e-Rapor | Sistem Manajemen Akademik";
+
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -435,15 +439,40 @@ export default function App() {
 
   const handleDeleteSchool = async (id) => { try { await deleteDoc(docPath('schools', id)); showNotification("Data dihapus!"); } catch(e) {} };
   const handleDeleteTeacher = async (id) => { try { await deleteDoc(docPath('teachers', id)); showNotification("Data dihapus!"); } catch(e) {} };
-  const handleDeleteClass = async (id) => { try { await deleteDoc(docPath('classes', id)); showNotification("Data dihapus!"); } catch(e) {} };
-  const handleDeleteStudent = async (id) => { try { await deleteDoc(docPath('students', id)); showNotification("Data dihapus!"); } catch(e) {} };
+  
+  // PERBAIKAN 1: Saat kelas dihapus, bersihkan juga semua status rombel siswa di dalamnya
+  const handleDeleteClass = async (id) => { 
+    try { 
+      await deleteDoc(docPath('classes', id)); 
+      const enrToDelete = enrollments.filter(e => e.classId === id);
+      for(const enr of enrToDelete) {
+         await deleteDoc(docPath('enrollments', enr.id));
+      }
+      showNotification("Data Kelas beserta Rombel terkait dihapus!"); 
+    } catch(e) {} 
+  };
+  
+  // DIPERBARUI: Saat siswa dihapus, hapus juga data rombel/nilainya agar tidak menjadi 'Ghost Data'
+  const handleDeleteStudent = async (id) => { 
+    try { 
+      await deleteDoc(docPath('students', id)); 
+      const enrToDelete = enrollments.filter(e => e.studentId === id);
+      for(const enr of enrToDelete) {
+         await deleteDoc(docPath('enrollments', enr.id));
+      }
+      showNotification("Data Siswa & Rombel berhasil dihapus!"); 
+    } catch(e) {} 
+  };
+  
   const handleDeleteSubject = async (id) => { try { await deleteDoc(docPath('subjects', id)); showNotification("Data dihapus!"); } catch(e) {} };
   const handleDeleteLogin = async (id) => { try { await deleteDoc(docPath('users', id)); showNotification("Akun dihapus!"); } catch(e) {} };
   const handleDeleteCp = async (id) => { try { await deleteDoc(docPath('cps', id)); showNotification("CP dihapus!"); } catch(e) {} };
 
-  const handleSaveSchool = async (e) => { e.preventDefault(); if (isEditingSchool) setSchools(schools.map(s => s.id === schoolForm.id ? schoolForm : s)); else setSchools([...schools, { ...schoolForm, id: 'sch-' + Date.now() }]); showNotification("Data Sekolah tersimpan!"); setSchoolView('table'); };
-  const handleSaveTeacher = async (e) => { e.preventDefault(); const data = { ...teacherFormState, level: teacherTab }; if (isEditingTeacher) setTeachers(teachers.map(t => t.id === teacherFormState.id ? data : t)); else setTeachers([...teachers, { ...data, id: 't' + Date.now() }]); showNotification("Data Guru tersimpan!"); setTeacherView('table'); };
-  const handleSaveClass = async (e) => { e.preventDefault(); const data = { ...classFormState, level: classTab }; if (isEditingClass) setClasses(classes.map(c => c.id === classFormState.id ? data : c)); else setClasses([...classes, { ...data, id: 'cls-' + Date.now() }]); showNotification("Data Kelas tersimpan!"); setClassView('table'); };
+  // PERBAIKAN: Penyimpanan form langsung ke Database Cloud
+  const handleSaveSchool = async (e) => { e.preventDefault(); const data = { ...schoolForm }; if (!data.id) data.id = 'sch-' + Date.now(); try { await setDoc(docPath('schools', data.id), data); showNotification("Data Sekolah tersimpan ke Cloud!"); setSchoolView('table'); } catch(e) { console.error(e); } };
+  const handleSaveTeacher = async (e) => { e.preventDefault(); const data = { ...teacherFormState, level: teacherTab }; if (!data.id) data.id = 't' + Date.now(); try { await setDoc(docPath('teachers', data.id), data); showNotification("Data Guru tersimpan ke Cloud!"); setTeacherView('table'); } catch(e) { console.error(e); } };
+  const handleSaveClass = async (e) => { e.preventDefault(); const data = { ...classFormState, level: classTab }; if (!data.id) data.id = 'cls-' + Date.now(); try { await setDoc(docPath('classes', data.id), data); showNotification("Data Kelas tersimpan ke Cloud!"); setClassView('table'); } catch(e) { console.error(e); } };
+  
   const handleSaveStudent = async (e) => {
     e.preventDefault();
     const isDuplicate = students.some(s => s.nisn === studentFormState.nisn && s.id !== studentFormState.id);
@@ -1315,12 +1344,19 @@ export default function App() {
                       students.filter(s => s.level === activeRombelClass.level).map(std => {
                         const studentEnrollment = activeEnrollments.find(e => e.studentId === std.id);
                         const isEnrolled = studentEnrollment?.classId === activeRombelClass.id;
-                        const isEnrolledInOther = studentEnrollment && studentEnrollment.classId !== activeRombelClass.id;
+                        
+                        // Pastikan kelas lain itu benar-benar ADA di database (bukan kelas hantu yang sudah terhapus)
+                        const enrolledClassExists = studentEnrollment ? classes.some(c => c.id === studentEnrollment.classId) : false;
+                        const isEnrolledInOther = studentEnrollment && studentEnrollment.classId !== activeRombelClass.id && enrolledClassExists;
 
                         const handleToggleRombel = async () => {
                            if (isEnrolled) {
                              await deleteDoc(docPath('enrollments', studentEnrollment.id));
                            } else {
+                             // Bersihkan enrollment hantu/lama jika ada sebelum membuat yang baru
+                             if (studentEnrollment) {
+                               await deleteDoc(docPath('enrollments', studentEnrollment.id));
+                             }
                              const newEnr = {
                                id: 'enr-' + Date.now(), studentId: std.id, classId: activeRombelClass.id,
                                tahunAjaran: activeTA, semester: activeSemester,
