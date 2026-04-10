@@ -217,14 +217,14 @@ export default function App() {
   const [predikats, setPredikats] = useState([ { id: 'p1', min: 91, max: 100, label: 'Sangat Baik' }, { id: 'p2', min: 81, max: 90, label: 'Baik' }, { id: 'p3', min: 70, max: 80, label: 'Cukup' }, { id: 'p4', min: 0, max: 69, label: 'Kurang' } ]);
 
   // --- STATES LOKAL (UI & NAVIGASI) ---
-  const [activeTA, setActiveTA] = useState(() => localStorage.getItem('eRapor_activeTA') || '2025/2026');
-  const [activeSemester, setActiveSemester] = useState(() => localStorage.getItem('eRapor_activeSemester') || 'Ganjil');
-
-  useEffect(() => { localStorage.setItem('eRapor_activeTA', activeTA); }, [activeTA]);
-  useEffect(() => { localStorage.setItem('eRapor_activeSemester', activeSemester); }, [activeSemester]);
+  const [activeTA, setActiveTA] = useState('2025/2026');
+  const [activeSemester, setActiveSemester] = useState('Ganjil');
+  const [tempTA, setTempTA] = useState('2025/2026');
+  const [tempSemester, setTempSemester] = useState('Ganjil');
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isCheckingSession, setIsCheckingSession] = useState(!!localStorage.getItem('eRapor_session_username'));
   
   const [activeMenu, setActiveMenu] = useState(''); 
   const [activeClass, setActiveClass] = useState(null);
@@ -352,6 +352,7 @@ export default function App() {
             INITIAL_ENROLLMENTS.forEach(e => setDoc(docPath('enrollments', e.id), e));
             ['2023/2024', '2024/2025', '2025/2026', '2026/2027'].forEach(y => setDoc(docPath('academicYears', y.replace('/','-')), {value: y}));
             ['SD', 'SMP', 'SMA'].forEach(lvl => setDoc(docPath('raporSettings', lvl), defaultRaporSetting));
+            setDoc(docPath('settings', 'activePeriod'), { ta: '2025/2026', semester: 'Ganjil' });
          }
        } catch (err) { 
            console.error("Error Seeding Database:", err); 
@@ -368,6 +369,18 @@ export default function App() {
          setSystemWarning("Akses Firestore ditolak! Pastikan tab 'Rules' di Firestore Anda diatur menjadi 'allow read, write: if true;'");
       }
     };
+
+    const uPeriod = onSnapshot(docPath('settings', 'activePeriod'), snap => {
+       if (snap.exists()) {
+          const data = snap.data();
+          setActiveTA(data.ta);
+          setActiveSemester(data.semester);
+          setTempTA(data.ta);
+          setTempSemester(data.semester);
+       } else {
+          setDoc(docPath('settings', 'activePeriod'), { ta: '2025/2026', semester: 'Ganjil' });
+       }
+    }, handleDbError);
 
     const uTA = onSnapshot(publicDbPath('academicYears'), snap => { if(!snap.empty) setAcademicYears(snap.docs.map(d => d.data().value).sort().reverse()); }, handleDbError);
     const uTeach = onSnapshot(publicDbPath('teachers'), snap => setTeachers(snap.docs.map(d => d.data())), handleDbError);
@@ -387,8 +400,44 @@ export default function App() {
        }
     }, handleDbError);
 
-    return () => { uTA(); uTeach(); uUsers(); uSchools(); uClasses(); uStudents(); uSubjects(); uCps(); uEnrollments(); uSettings(); };
+    return () => { uPeriod(); uTA(); uTeach(); uUsers(); uSchools(); uClasses(); uStudents(); uSubjects(); uCps(); uEnrollments(); uSettings(); };
   }, [isReady, dbUser]);
+
+  // PEMBARUAN: Auto-Login (Ingat Saya) berdasarkan sesi localStorage & Loading Screen
+  useEffect(() => {
+    let timeout;
+    const sessionUsername = localStorage.getItem('eRapor_session_username');
+    
+    if (sessionUsername && !isLoggedIn) {
+      if (isReady && users.length > 0) {
+        const user = users.find(u => u.username === sessionUsername);
+        if (user) {
+          setIsLoggedIn(true);
+          if (user.role === 'admin') {
+            setCurrentUser({ ...user, name: 'Administrator System' });
+            setActiveMenu(localStorage.getItem('eRapor_activeMenu') || 'admin-dashboard');
+          } else {
+            const teacherInfo = teachers.find(t => t.id === user.teacherId);
+            setCurrentUser({ ...user, name: teacherInfo?.name || 'Guru' });
+            const assignedClass = classes.find(c => c.teacherId === teacherInfo?.id) || null;
+            setActiveClass(assignedClass);
+            setActiveMenu(localStorage.getItem('eRapor_activeMenu') || 'guru-dashboard');
+          }
+        }
+        setIsCheckingSession(false);
+      }
+      // Failsafe jika internet lambat / data kosong
+      timeout = setTimeout(() => setIsCheckingSession(false), 5000);
+    } else {
+      setIsCheckingSession(false);
+    }
+    
+    return () => clearTimeout(timeout);
+  }, [users, teachers, classes, isLoggedIn, isReady]);
+
+  useEffect(() => {
+    if (activeMenu) localStorage.setItem('eRapor_activeMenu', activeMenu);
+  }, [activeMenu]);
 
   useEffect(() => { if (isLoggedIn && (!currentUser || !currentUser.role)) handleLogout(); }, [isLoggedIn, currentUser]);
   useEffect(() => { if (printDataQueue && printDataQueue.length > 0) setTimeout(() => window.print(), 500); }, [printDataQueue]);
@@ -409,19 +458,30 @@ export default function App() {
     const user = users.find(u => u.username === username);
     if (!user) return setLoginError("Akun belum terdaftar di dalam sistem!");
     if (user.password !== password) return setLoginError("Password yang Anda masukkan salah!");
+    
+    localStorage.setItem('eRapor_session_username', user.username);
+    
     setLoginError(''); setIsLoggedIn(true);
 
     if (user.role === 'admin') {
-      setCurrentUser({ ...user, name: 'Administrator System' }); setActiveMenu('admin-dashboard'); showNotification("Berhasil masuk sebagai Admin System");
+      setCurrentUser({ ...user, name: 'Administrator System' }); 
+      setActiveMenu(localStorage.getItem('eRapor_activeMenu') || 'admin-dashboard'); 
+      showNotification("Berhasil masuk sebagai Admin System");
     } else {
       const teacherInfo = teachers.find(t => t.id === user.teacherId);
       setCurrentUser({ ...user, name: teacherInfo?.name || 'Guru' });
       const assignedClass = classes.find(c => c.teacherId === teacherInfo?.id) || null;
-      setActiveClass(assignedClass); setActiveMenu('guru-dashboard'); showNotification(`Berhasil masuk sebagai ${user.role}`);
+      setActiveClass(assignedClass); 
+      setActiveMenu(localStorage.getItem('eRapor_activeMenu') || 'guru-dashboard'); 
+      showNotification(`Berhasil masuk sebagai ${user.role}`);
     }
   };
 
-  const handleLogout = () => { setIsLoggedIn(false); setCurrentUser(null); setActiveMenu(''); setActiveClass(null); setSelectedClassId(''); setActiveSubjectId(null); };
+  const handleLogout = () => { 
+    localStorage.removeItem('eRapor_session_username');
+    localStorage.removeItem('eRapor_activeMenu');
+    setIsLoggedIn(false); setCurrentUser(null); setActiveMenu(''); setActiveClass(null); setSelectedClassId(''); setActiveSubjectId(null); 
+  };
 
   const getFase = (tingkat) => {
     const t = parseInt(tingkat);
@@ -487,7 +547,6 @@ export default function App() {
   
   // --- HANDLERS SEMUA FITUR IMPORT MULTI-BARIS ---
   
-  // 1. Import Siswa Induk
   const handleImportSiswaSubmit = async () => {
     if(!importText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
     const rows = importText.trim().split('\n').filter(r => r.trim());
@@ -506,7 +565,6 @@ export default function App() {
     } catch(e) { console.error(e); }
   };
 
-  // 2. Import Nilai Mapel
   const handleImportNilaiSubmit = (classId, subjectId) => {
     if(!importNilaiText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
     const rows = importNilaiText.trim().split('\n').filter(r => r.trim());
@@ -543,7 +601,6 @@ export default function App() {
     setImportNilaiText('');
   };
 
-  // 3. Import Kehadiran Siswa
   const handleImportKehadiranSubmit = (classId) => {
     if(!importKehadiranText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
     const rows = importKehadiranText.trim().split('\n').filter(r => r.trim());
@@ -577,7 +634,6 @@ export default function App() {
     setImportKehadiranText('');
   };
 
-  // 4. Import Karakter & Catatan Walas
   const handleImportCatatanSubmit = (classId) => {
     if(!importCatatanText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
     const rows = importCatatanText.trim().split('\n').filter(r => r.trim());
@@ -610,7 +666,6 @@ export default function App() {
     setImportCatatanText('');
   };
 
-  // 5. Import Hafalan & Tilawah (Bisa multi dengan koma)
   const handleImportHafalanSubmit = (classId) => {
     if(!importHafalanText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
     const rows = importHafalanText.trim().split('\n').filter(r => r.trim());
@@ -781,7 +836,7 @@ export default function App() {
     const subUmum = subjects.filter(s => s.level === level && !s.isLokal).sort((a,b) => (a.urutan || 0) - (b.urutan || 0));
     const subLokal = subjects.filter(s => s.level === level && s.isLokal).sort((a,b) => (a.urutan || 0) - (b.urutan || 0));
     
-    // PEMBARUAN: Diperketat font 10pt, margin-bottom diperkecil, padding table diperkecil untuk menghemat tempat (Poin 4 & 6)
+    // PEMBARUAN: Diperketat font 10pt, margin-bottom diperkecil, padding table diperkecil untuk menghemat tempat
     let tNilaiHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important; margin-bottom: 8px; page-break-inside: auto;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 4%;">No</th><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 16%;">Mata Pelajaran</th><th colspan="2" style="border: 1px solid black; padding: 2px; width: 14%;">Sumatif Lingkup<br/>Materi</th><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 6%; background-color: #fecaca;">Nilai<br/>Akhir</th><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 60%;">Capaian Kompetensi</th></tr><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th style="border: 1px solid black; padding: 2px; width: 7%; white-space: nowrap;">Sum 1</th><th style="border: 1px solid black; padding: 2px; width: 7%; white-space: nowrap;">Sum 2</th></tr></thead><tbody>`;
     
     let no = 1;
@@ -790,7 +845,6 @@ export default function App() {
       const s1 = parseFloat(n.sumatif1) || ''; const s2 = parseFloat(n.sumatif2) || '';
       let avg = ''; if (s1 !== '' || s2 !== '') avg = Math.round((Number(s1) + Number(s2)) / (s1 !== '' && s2 !== '' ? 2 : 1));
       
-      // PEMBARUAN: Padding atas bawah dihilangkan agar lebih rapat, jarak garis putus-putus diperkecil
       let capaianHtml = '';
       if (n.tercapai && n.belumTercapai) capaianHtml = `<div style="padding-bottom: 2px; border-bottom: 1px dashed black; margin-bottom: 2px;">${n.tercapai}</div><div style="padding-top: 2px;">${n.belumTercapai}</div>`;
       else if (n.tercapai) capaianHtml = `<div>${n.tercapai}</div>`;
@@ -809,12 +863,12 @@ export default function App() {
     const sp = enr.specialData || { surah: [], hadist: [], doa: [], tilawah: [] };
     const fList = (arr) => { if(!arr || !Array.isArray(arr)) return '-'; const v = arr.filter(i => i.trim() !== ''); return v.length > 0 ? v.join('<br/>') : '-'; };
     
-    // PEMBARUAN: Font 10pt (Poin 5)
-    const tHafalanHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">HAFALAN</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 2px 4px; width: 60px; font-weight: bold; vertical-align: top;">Surah</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.surah)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; font-weight: bold; vertical-align: top;">Hadist</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.hadist)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; font-weight: bold; vertical-align: top;">Doa'</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.doa)}</td></tr><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">TILAWAH</th></tr><tr><td colspan="2" style="border: 1px solid black; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: top;">${fList(sp.tilawah)}</td></tr></tbody></table>`;
+    // PEMBARUAN: Font 10pt
+    const tHafalanHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">HAFALAN</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 2px 4px; width: 60px; font-weight: bold; vertical-align: top;">Surah</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.surah)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; font-weight: bold; vertical-align: top;">Hadist</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.hadist)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; font-weight: bold; vertical-align: top;">Doa'</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.doa)}</td></tr><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">TILAWAH</th></tr><tr><td colspan="2" style="border: 1px solid black; padding: 2px 4px; text-align: center; vertical-align: top;">${fList(sp.tilawah)}</td></tr></tbody></table>`;
 
     const abs = enr.kehadiran || { sakit: 0, izin: 0, alpa: 0 };
     const fAbs = (val) => (val && Number(val) > 0) ? `${val} hari` : '-';
-    // PEMBARUAN: Font 10pt (Poin 5)
+    // PEMBARUAN: Font 10pt
     const tAbsensiHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">ABSENSI</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 2px 4px; white-space: nowrap;">Sakit</td><td style="border: 1px solid black; padding: 2px 4px; text-align: center; width: 30%;">${fAbs(abs.sakit)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; white-space: nowrap;">Izin</td><td style="border: 1px solid black; padding: 2px 4px; text-align: center;">${fAbs(abs.izin)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; white-space: nowrap;">Tanpa Keterangan</td><td style="border: 1px solid black; padding: 2px 4px; text-align: center;">${fAbs(abs.alpa)}</td></tr></tbody></table>`;
 
     const dataMap = {
@@ -916,6 +970,17 @@ export default function App() {
   // ==========================================
   
   if (!isLoggedIn) {
+    if (isCheckingSession) {
+      return (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans">
+           <div className="flex flex-col items-center text-blue-600">
+              <Loader2 size={48} className="animate-spin mb-4" />
+              <p className="font-bold text-gray-600">Memulihkan sesi Anda...</p>
+           </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -965,8 +1030,6 @@ export default function App() {
             body, html { height: 100%; margin: 0 !important; padding: 0 !important; background-color: #fff !important; overflow: visible; }
             .print-wrapper { background: none; padding: 0 !important; margin: 0 !important; min-height: auto; }
             
-            /* PENTING: Menghilangkan padding ganda agar tabel tidak terpotong & Kop Surat sejajar (Poin 1 & 3) */
-            /* Menambahkan lebar spesifik agar tidak terdorong flexbox */
             .print-page { 
               box-sizing: border-box;
               width: 100% !important; 
@@ -983,14 +1046,12 @@ export default function App() {
               overflow: visible !important; 
             }
             
-            /* PENTING: Menghilangkan blank page di halaman paling akhir (Poin 2) */
             .print-page:last-child { page-break-after: auto; }
             
             .print-page img { display: inline-block !important; max-width: 100%; height: auto; } 
 
             .no-print { display: none !important; }
             
-            /* Sembunyikan Watermark Sandbox & Iframe (Poin 4) */
             ::-webkit-scrollbar { display: none !important; }
             * { scrollbar-width: none !important; }
             [class*="codesandbox"],
@@ -1168,16 +1229,27 @@ export default function App() {
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-6 rounded-2xl shadow-md text-white flex flex-col md:flex-row items-center justify-between border-b-4 border-yellow-400">
                    <div>
-                      <h3 className="text-xl font-bold text-yellow-300 flex items-center"><BookOpen className="mr-2"/> Jantung Sistem (Periode Aktif)</h3>
-                      <p className="text-sm text-blue-200 mt-1">Ganti periode di sini untuk membuka arsip masa lalu atau beralih ke tahun ajaran baru.</p>
+                      <h3 className="text-xl font-bold text-yellow-300 flex items-center"><BookOpen className="mr-2"/> Jantung Sistem (Periode Aktif Global)</h3>
+                      <p className="text-sm text-blue-200 mt-1">Status saat ini: <span className="font-bold text-white">{activeTA} - {activeSemester}</span>. Ubah untuk sinkronisasi semua perangkat.</p>
                    </div>
                    <div className="flex items-center space-x-3 mt-4 md:mt-0">
-                      <select value={activeTA} onChange={e => setActiveTA(e.target.value)} className="bg-white text-blue-900 rounded-lg p-2.5 font-bold outline-none shadow-sm cursor-pointer border-0">
+                      <select value={tempTA} onChange={e => setTempTA(e.target.value)} className="bg-white text-blue-900 rounded-lg p-2.5 font-bold outline-none shadow-sm cursor-pointer border-0">
                          {academicYears.map(ta => <option key={ta} value={ta}>{ta}</option>)}
                       </select>
-                      <select value={activeSemester} onChange={e => setActiveSemester(e.target.value)} className="bg-white text-blue-900 rounded-lg p-2.5 font-bold outline-none shadow-sm cursor-pointer border-0">
+                      <select value={tempSemester} onChange={e => setTempSemester(e.target.value)} className="bg-white text-blue-900 rounded-lg p-2.5 font-bold outline-none shadow-sm cursor-pointer border-0">
                          <option value="Ganjil">Semester Ganjil</option><option value="Genap">Semester Genap</option>
                       </select>
+                      <button 
+                         onClick={async () => {
+                            try {
+                               await setDoc(docPath('settings', 'activePeriod'), { ta: tempTA, semester: tempSemester });
+                               showNotification(`Periode sistem global berhasil diubah menjadi ${tempTA} - ${tempSemester}.`);
+                            } catch(e) { console.error(e); alert("Gagal mengubah periode!"); }
+                         }} 
+                         className="bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold py-2.5 px-4 rounded-lg shadow transition-transform active:scale-95 flex items-center"
+                      >
+                         <Save size={18} className="mr-2"/> Simpan
+                      </button>
                    </div>
                 </div>
 
@@ -1791,17 +1863,15 @@ export default function App() {
                     </div>
                   </div>
                   
-                  <div style={{ fontFamily: raporSettings[raporTab]?.fontFamily || 'Arial, sans-serif' }} className="flex-1 flex flex-col">
-                    <RichTextEditor 
-                       key={raporTab} 
-                       initialValue={raporSettings[raporTab].templateHtml} 
-                       onBlur={(newHtml) => {
-                          const updated = { ...raporSettings, [raporTab]: { ...raporSettings[raporTab], templateHtml: newHtml } };
-                          setRaporSettings(updated);
-                          try { setDoc(docPath('raporSettings', raporTab), updated[raporTab]); showNotification("Template tersimpan otomatis ke Cloud."); } catch(e){}
-                       }} 
-                    />
-                  </div>
+                  <RichTextEditor 
+                     key={raporTab} 
+                     initialValue={raporSettings[raporTab].templateHtml} 
+                     onBlur={(newHtml) => {
+                        const updated = { ...raporSettings, [raporTab]: { ...raporSettings[raporTab], templateHtml: newHtml } };
+                        setRaporSettings(updated);
+                        try { setDoc(docPath('raporSettings', raporTab), updated[raporTab]); showNotification("Template tersimpan otomatis ke Cloud."); } catch(e){}
+                     }} 
+                  />
                 </div>
               )}
 
@@ -2217,7 +2287,7 @@ export default function App() {
                   <h3 className="font-bold text-xl flex items-center"><BookOpen className="mr-2 text-purple-600"/> Input Hafalan & Tilawah {displayClass ? `- ${displayClass.name}` : ''}</h3>
                   <div className="flex space-x-2">
                     {displayClass && <button onClick={() => setShowImportHafalanModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-green-700 shadow-md"><FileUp size={18} className="mr-2" /> Import Excel</button>}
-                    {displayClass && <button onClick={() => handleSaveBulkEnrollments(displayClass.id)} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-purple-700 shadow-md"><Save size={18} className="mr-2" /> Simpan</button>}
+                    {displayClass && <button onClick={() => handleSaveBulkEnrollments(displayClass.id)} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-purple-700 shadow-md"><Save size={18} className="mr-2" /> Simpan Data</button>}
                   </div>
                 </div>
 
