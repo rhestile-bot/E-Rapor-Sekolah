@@ -169,28 +169,29 @@ const INITIAL_ENROLLMENTS = [
 ];
 
 const DEFAULT_HTML_TEMPLATE = `
-<div style="text-align: center; margin-bottom: 15px; border-bottom: 3px double black; padding-bottom: 10px;">
-  <h2 style="margin:0; font-size: 18px; color: #166534;">YAYASAN SITTI ZAENAB EMSIL</h2>
-  <h1 style="margin:0; font-size: 24px; color: #1e3a8a; text-transform: uppercase;">{{NAMA_SEKOLAH|U}}</h1>
-  <p style="margin:0; font-style: italic; color: #dc2626; font-weight: bold; font-size: 12px;">berkarakter dan berprestasi</p>
-  <p style="margin:0; font-size: 11pt;">{{ALAMAT_SEKOLAH|P}}</p>
+<div style="text-align: center; margin-bottom: 10px; border-bottom: 3px double black; padding-bottom: 5px;">
+  <h2 style="margin:0; font-size: 14pt; color: #166534;">YAYASAN SITTI ZAENAB EMSIL</h2>
+  <h1 style="margin:0; font-size: 18pt; color: #1e3a8a; text-transform: uppercase;">{{NAMA_SEKOLAH|U}}</h1>
+  <p style="margin:0; font-style: italic; color: #dc2626; font-weight: bold; font-size: 9pt;">berkarakter dan berprestasi</p>
+  <p style="margin:0; font-size: 10pt;">{{ALAMAT_SEKOLAH|P}}</p>
 </div>
-<h3 style="text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px;">RAPOR SISIPAN</h3>
-<table style="width: 100%; margin-bottom: 15px; font-size: 11pt; font-weight: bold; text-align: left;">
+<h3 style="text-align: center; font-size: 12pt; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px;">RAPOR SISIPAN</h3>
+<table style="width: 100%; margin-bottom: 8px; font-size: 10pt; font-weight: bold; text-align: left;">
   <tr><td style="width: 80px;">Nama</td><td style="width: 10px;">:</td><td>{{NAMA_SISWA|U}}</td><td style="width: 80px;">Kelas</td><td style="width: 10px;">:</td><td>{{KELAS}}</td></tr>
   <tr><td>NISN / NIS</td><td>:</td><td>{{NISN}} / {{NIS}}</td><td>Fase / Tingkat</td><td>:</td><td>{{FASE}} / {{TINGKAT}}</td></tr>
   <tr><td>Tahun Ajaran</td><td>:</td><td>{{TAHUN_AJARAN}}</td><td>Semester</td><td>:</td><td>{{SEMESTER|P}}</td></tr>
 </table>
 {{TABEL_NILAI}}
-<br/>
-<div style="border: 1px solid black; margin-bottom: 15px; page-break-inside: avoid;">
-  <div style="background-color: #f3f4f6; font-weight: bold; padding: 4px; border-bottom: 1px solid black;">DESKRIPSI KARAKTER & CATATAN</div>
-  <div style="padding: 8px; min-height: 50px;"><b>Karakter:</b><br/>{{KARAKTER}}<br/><br/><b>Catatan Wali Kelas:</b><br/>{{CATATAN_WALAS}}</div>
+<div style="border: 1px solid black; margin-bottom: 8px; page-break-inside: avoid;">
+  <div style="background-color: #f3f4f6; font-size: 10pt; font-weight: bold; padding: 4px; border-bottom: 1px solid black;">DESKRIPSI KARAKTER & CATATAN</div>
+  <div style="padding: 4px; font-size: 10pt; min-height: 40px; line-height: 1.2;"><b>Karakter:</b><br/>{{KARAKTER}}<br/><b>Catatan Wali Kelas:</b><br/>{{CATATAN_WALAS}}</div>
 </div>
-<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; page-break-inside: avoid;">
-  <tr><td style="width: 50%; vertical-align: top; padding-right: 10px;">{{TABEL_HAFALAN}}</td><td style="width: 50%; vertical-align: top; padding-left: 10px;">{{TABEL_ABSENSI}}</td></tr>
-</table>
-<table style="width: 100%; margin-top: 30px; page-break-inside: avoid;">
+<div style="page-break-inside: avoid; margin-bottom: 8px;">
+  <table style="width: 100%; border-collapse: collapse;">
+    <tr><td style="width: 50%; vertical-align: top; padding-right: 4px;">{{TABEL_HAFALAN}}</td><td style="width: 50%; vertical-align: top; padding-left: 4px;">{{TABEL_ABSENSI}}</td></tr>
+  </table>
+</div>
+<table style="width: 100%; font-size: 10pt; margin-top: 15px; page-break-inside: avoid;">
   <tr><td style="text-align: center; width: 50%;">Mengetahui,<br/>Kepala {{NAMA_SEKOLAH|P}}<br/><br/><br/><br/><b><u>{{NAMA_KEPSEK|P}}</u></b><br/>NIY. {{NIP_KEPSEK}}</td><td style="text-align: center; width: 50%;">{{TEMPAT_CETAK}}, {{TANGGAL_CETAK}}<br/>Wali Kelas<br/><br/><br/><br/><b><u>{{NAMA_WALAS|P}}</u></b><br/>NIY. {{NIP_WALAS}}</td></tr>
 </table>
 `;
@@ -216,12 +217,9 @@ export default function App() {
   const [predikats, setPredikats] = useState([ { id: 'p1', min: 91, max: 100, label: 'Sangat Baik' }, { id: 'p2', min: 81, max: 90, label: 'Baik' }, { id: 'p3', min: 70, max: 80, label: 'Cukup' }, { id: 'p4', min: 0, max: 69, label: 'Kurang' } ]);
 
   // --- STATES LOKAL (UI & NAVIGASI) ---
-  
-  // FIX: Menggunakan localStorage agar pilihan Tahun Ajaran & Semester tidak hilang saat di-refresh
   const [activeTA, setActiveTA] = useState(() => localStorage.getItem('eRapor_activeTA') || '2025/2026');
   const [activeSemester, setActiveSemester] = useState(() => localStorage.getItem('eRapor_activeSemester') || 'Ganjil');
 
-  // Menyimpan perubahan ke memori browser setiap kali user mengganti pilihan
   useEffect(() => { localStorage.setItem('eRapor_activeTA', activeTA); }, [activeTA]);
   useEffect(() => { localStorage.setItem('eRapor_activeSemester', activeSemester); }, [activeSemester]);
 
@@ -244,9 +242,21 @@ export default function App() {
   const [isFinalViewMode, setIsFinalViewMode] = useState(false);
   const [showPredikatModal, setShowPredikatModal] = useState(false);
   
-  // State Import Nilai
+  // State Import (Modal & Teks) untuk Semua Fitur
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+  
   const [showImportNilaiModal, setShowImportNilaiModal] = useState(false);
   const [importNilaiText, setImportNilaiText] = useState('');
+
+  const [showImportKehadiranModal, setShowImportKehadiranModal] = useState(false);
+  const [importKehadiranText, setImportKehadiranText] = useState('');
+
+  const [showImportCatatanModal, setShowImportCatatanModal] = useState(false);
+  const [importCatatanText, setImportCatatanText] = useState('');
+
+  const [showImportHafalanModal, setShowImportHafalanModal] = useState(false);
+  const [importHafalanText, setImportHafalanText] = useState('');
 
   // CRUD States Local
   const [newTAForm, setNewTAForm] = useState(''); 
@@ -266,8 +276,6 @@ export default function App() {
   const [studentTab, setStudentTab] = useState('SD');
   const [studentFormState, setStudentFormState] = useState({ id: '', name: '', jk: 'L', nisn: '', nis: '', level: 'SD' });
   const [isEditingStudent, setIsEditingStudent] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importText, setImportText] = useState('');
   const [subjectView, setSubjectView] = useState('table'); 
   const [subjectTab, setSubjectTab] = useState('SD');
   const [subjectFormState, setSubjectFormState] = useState({ id: '', name: '', level: 'SD', teacherId: '', isLokal: false, urutan: '' });
@@ -287,7 +295,7 @@ export default function App() {
   const [raporViewMode, setRaporViewMode] = useState('settings'); 
   const [rekapTab, setRekapTab] = useState('SD'); 
 
-  // Definisi activeEnrollments (DIPERBARUI: Hanya hitung jika data induk siswa masih ada)
+  // Definisi activeEnrollments
   const activeEnrollments = enrollments.filter(e => 
     e.tahunAjaran === activeTA && 
     e.semester === activeSemester && 
@@ -297,7 +305,6 @@ export default function App() {
   // --- SETUP FIREBASE & AUTHENTICATION ---
   useEffect(() => {
     let isMounted = true; 
-    // Mengubah judul tab browser secara otomatis
     document.title = "e-Rapor | Sistem Manajemen Akademik";
 
     const initAuth = async () => {
@@ -386,7 +393,7 @@ export default function App() {
   useEffect(() => { if (isLoggedIn && (!currentUser || !currentUser.role)) handleLogout(); }, [isLoggedIn, currentUser]);
   useEffect(() => { if (printDataQueue && printDataQueue.length > 0) setTimeout(() => window.print(), 500); }, [printDataQueue]);
 
-  const showNotification = (msg) => { setToastMsg(msg); setShowToast(true); setTimeout(() => setShowToast(false), 3000); };
+  const showNotification = (msg) => { setToastMsg(msg); setShowToast(true); setTimeout(() => setShowToast(false), 5000); };
   
   const handleCopyVariable = (text) => {
     const textArea = document.createElement("textarea");
@@ -440,7 +447,6 @@ export default function App() {
   const handleDeleteSchool = async (id) => { try { await deleteDoc(docPath('schools', id)); showNotification("Data dihapus!"); } catch(e) {} };
   const handleDeleteTeacher = async (id) => { try { await deleteDoc(docPath('teachers', id)); showNotification("Data dihapus!"); } catch(e) {} };
   
-  // PERBAIKAN 1: Saat kelas dihapus, bersihkan juga semua status rombel siswa di dalamnya
   const handleDeleteClass = async (id) => { 
     try { 
       await deleteDoc(docPath('classes', id)); 
@@ -452,7 +458,6 @@ export default function App() {
     } catch(e) {} 
   };
   
-  // DIPERBARUI: Saat siswa dihapus, hapus juga data rombel/nilainya agar tidak menjadi 'Ghost Data'
   const handleDeleteStudent = async (id) => { 
     try { 
       await deleteDoc(docPath('students', id)); 
@@ -468,7 +473,6 @@ export default function App() {
   const handleDeleteLogin = async (id) => { try { await deleteDoc(docPath('users', id)); showNotification("Akun dihapus!"); } catch(e) {} };
   const handleDeleteCp = async (id) => { try { await deleteDoc(docPath('cps', id)); showNotification("CP dihapus!"); } catch(e) {} };
 
-  // PERBAIKAN: Penyimpanan form langsung ke Database Cloud
   const handleSaveSchool = async (e) => { e.preventDefault(); const data = { ...schoolForm }; if (!data.id) data.id = 'sch-' + Date.now(); try { await setDoc(docPath('schools', data.id), data); showNotification("Data Sekolah tersimpan ke Cloud!"); setSchoolView('table'); } catch(e) { console.error(e); } };
   const handleSaveTeacher = async (e) => { e.preventDefault(); const data = { ...teacherFormState, level: teacherTab }; if (!data.id) data.id = 't' + Date.now(); try { await setDoc(docPath('teachers', data.id), data); showNotification("Data Guru tersimpan ke Cloud!"); setTeacherView('table'); } catch(e) { console.error(e); } };
   const handleSaveClass = async (e) => { e.preventDefault(); const data = { ...classFormState, level: classTab }; if (!data.id) data.id = 'cls-' + Date.now(); try { await setDoc(docPath('classes', data.id), data); showNotification("Data Kelas tersimpan ke Cloud!"); setClassView('table'); } catch(e) { console.error(e); } };
@@ -481,10 +485,13 @@ export default function App() {
     try { await setDoc(docPath('students', data.id), data); showNotification("Siswa tersimpan!"); setStudentView('table'); } catch(e) {}
   };
   
+  // --- HANDLERS SEMUA FITUR IMPORT MULTI-BARIS ---
+  
+  // 1. Import Siswa Induk
   const handleImportSiswaSubmit = async () => {
     if(!importText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
-    const rows = importText.trim().split('\n');
-    let successCount = 0;
+    const rows = importText.trim().split('\n').filter(r => r.trim());
+    let successCount = 0; let failedCount = 0;
     try {
       for (const row of rows) {
         const cols = row.split(/\t/);
@@ -492,18 +499,18 @@ export default function App() {
           const id = 'std-' + Date.now() + Math.random().toString().substr(2,5);
           await setDoc(docPath('students', id), { id: id, name: cols[0].trim(), jk: cols[1].trim().toUpperCase() === 'P' ? 'P' : 'L', nisn: cols[2].trim().replace(/\D/g, ''), nis: cols[3].trim(), level: studentTab });
           successCount++;
-        }
+        } else { failedCount++; }
       }
-      if (successCount > 0) { showNotification(`${successCount} Siswa berhasil di-import ke jenjang ${studentTab}!`); setShowImportModal(false); setImportText(''); } 
-      else { alert("Format tidak dikenali. Pastikan menyalin 4 kolom dari Excel (Nama, JK, NISN, NIS)."); }
+      showNotification(`Selesai! ${successCount} Berhasil, ${failedCount} Gagal di-import ke jenjang ${studentTab}.`); 
+      setShowImportModal(false); setImportText(''); 
     } catch(e) { console.error(e); }
   };
 
-  // --- HANDLER IMPORT NILAI & CP ---
+  // 2. Import Nilai Mapel
   const handleImportNilaiSubmit = (classId, subjectId) => {
     if(!importNilaiText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
-    const rows = importNilaiText.trim().split('\n');
-    let successCount = 0;
+    const rows = importNilaiText.trim().split('\n').filter(r => r.trim());
+    let successCount = 0; let failedCount = 0;
 
     setEnrollments(prevEnrs => {
       let nextEnrs = [...prevEnrs];
@@ -511,10 +518,8 @@ export default function App() {
         const cols = row.split(/\t/);
         if (cols.length >= 5) {
           const nisn = cols[0].trim().replace(/\D/g, '');
-          const sumatif1 = cols[1].trim();
-          const sumatif2 = cols[2].trim();
-          const tercapai = cols[3].trim();
-          const belumTercapai = cols[4].trim();
+          const sumatif1 = cols[1].trim(); const sumatif2 = cols[2].trim();
+          const tercapai = cols[3].trim(); const belumTercapai = cols[4].trim();
 
           const student = students.find(s => s.nisn === nisn);
           if (student) {
@@ -523,36 +528,130 @@ export default function App() {
               const e = nextEnrs[enrIndex];
               const currentNilai = e.nilai || {};
               const currentSubjectNilai = currentNilai[subjectId] || { sumatif1: '', sumatif2: '', tercapai: '', belumTercapai: '', selectedCps: {} };
-              
-              nextEnrs[enrIndex] = {
-                ...e,
-                nilai: {
-                  ...currentNilai,
-                  [subjectId]: {
-                    ...currentSubjectNilai,
-                    sumatif1: sumatif1,
-                    sumatif2: sumatif2,
-                    tercapai: tercapai,
-                    belumTercapai: belumTercapai
-                  }
-                }
-              };
+              nextEnrs[enrIndex] = { ...e, nilai: { ...currentNilai, [subjectId]: { ...currentSubjectNilai, sumatif1, sumatif2, tercapai, belumTercapai } } };
               successCount++;
-            }
-          }
-        }
+            } else { failedCount++; }
+          } else { failedCount++; }
+        } else { failedCount++; }
       }
       return nextEnrs;
     });
 
-    if (successCount > 0) {
-      showNotification(`${successCount} data nilai & CP berhasil di-import! Silakan klik Simpan untuk menyimpan ke Database Cloud.`);
-      setCpInputMode('manual'); 
-      setShowImportNilaiModal(false);
-      setImportNilaiText('');
-    } else {
-      alert("Gagal mengimpor. Pastikan format kolom benar (NISN | Sumatif 1 | Sumatif 2 | Capaian Tercapai | Capaian Perlu Bimbingan) dan pastikan NISN cocok dengan siswa di kelas yang sedang aktif.");
-    }
+    showNotification(`Selesai! ${successCount} Berhasil, ${failedCount} Gagal. (Pastikan klik tombol "Simpan" agar tersimpan ke Cloud)`);
+    setCpInputMode('manual'); 
+    setShowImportNilaiModal(false);
+    setImportNilaiText('');
+  };
+
+  // 3. Import Kehadiran Siswa
+  const handleImportKehadiranSubmit = (classId) => {
+    if(!importKehadiranText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
+    const rows = importKehadiranText.trim().split('\n').filter(r => r.trim());
+    let successCount = 0; let failedCount = 0;
+
+    setEnrollments(prevEnrs => {
+      let nextEnrs = [...prevEnrs];
+      for (const row of rows) {
+        const cols = row.split(/\t/);
+        if (cols.length >= 4) {
+          const nisn = cols[0].trim().replace(/\D/g, '');
+          const sakit = parseInt(cols[1].trim()) || 0;
+          const izin = parseInt(cols[2].trim()) || 0;
+          const alpa = parseInt(cols[3].trim()) || 0;
+
+          const student = students.find(s => s.nisn === nisn);
+          if (student) {
+            const enrIndex = nextEnrs.findIndex(e => e.studentId === student.id && e.classId === classId && e.tahunAjaran === activeTA && e.semester === activeSemester);
+            if (enrIndex > -1) {
+              nextEnrs[enrIndex] = { ...nextEnrs[enrIndex], kehadiran: { sakit, izin, alpa } };
+              successCount++;
+            } else { failedCount++; }
+          } else { failedCount++; }
+        } else { failedCount++; }
+      }
+      return nextEnrs;
+    });
+    
+    showNotification(`Selesai! ${successCount} Berhasil, ${failedCount} Gagal. (Pastikan klik "Simpan")`);
+    setShowImportKehadiranModal(false);
+    setImportKehadiranText('');
+  };
+
+  // 4. Import Karakter & Catatan Walas
+  const handleImportCatatanSubmit = (classId) => {
+    if(!importCatatanText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
+    const rows = importCatatanText.trim().split('\n').filter(r => r.trim());
+    let successCount = 0; let failedCount = 0;
+
+    setEnrollments(prevEnrs => {
+      let nextEnrs = [...prevEnrs];
+      for (const row of rows) {
+        const cols = row.split(/\t/);
+        if (cols.length >= 3) {
+          const nisn = cols[0].trim().replace(/\D/g, '');
+          const karakter = cols[1].trim();
+          const catatanWalas = cols[2].trim();
+
+          const student = students.find(s => s.nisn === nisn);
+          if (student) {
+            const enrIndex = nextEnrs.findIndex(e => e.studentId === student.id && e.classId === classId && e.tahunAjaran === activeTA && e.semester === activeSemester);
+            if (enrIndex > -1) {
+              nextEnrs[enrIndex] = { ...nextEnrs[enrIndex], karakter, catatanWalas };
+              successCount++;
+            } else { failedCount++; }
+          } else { failedCount++; }
+        } else { failedCount++; }
+      }
+      return nextEnrs;
+    });
+    
+    showNotification(`Selesai! ${successCount} Berhasil, ${failedCount} Gagal. (Pastikan klik "Simpan")`);
+    setShowImportCatatanModal(false);
+    setImportCatatanText('');
+  };
+
+  // 5. Import Hafalan & Tilawah (Bisa multi dengan koma)
+  const handleImportHafalanSubmit = (classId) => {
+    if(!importHafalanText.trim()) return alert("Tempelkan data excel terlebih dahulu!");
+    const rows = importHafalanText.trim().split('\n').filter(r => r.trim());
+    let successCount = 0; let failedCount = 0;
+
+    setEnrollments(prevEnrs => {
+      let nextEnrs = [...prevEnrs];
+      for (const row of rows) {
+        const cols = row.split(/\t/);
+        if (cols.length >= 5) {
+          const nisn = cols[0].trim().replace(/\D/g, '');
+          const surah = cols[1].split(',').map(s=>s.trim()).filter(s=>s);
+          const hadist = cols[2].split(',').map(s=>s.trim()).filter(s=>s);
+          const doa = cols[3].split(',').map(s=>s.trim()).filter(s=>s);
+          const tilawah = cols[4].split(',').map(s=>s.trim()).filter(s=>s);
+
+          const student = students.find(s => s.nisn === nisn);
+          if (student) {
+            const enrIndex = nextEnrs.findIndex(e => e.studentId === student.id && e.classId === classId && e.tahunAjaran === activeTA && e.semester === activeSemester);
+            if (enrIndex > -1) {
+              const e = nextEnrs[enrIndex];
+              nextEnrs[enrIndex] = {
+                ...e,
+                specialData: {
+                  surah: surah.length > 0 ? surah : [''],
+                  hadist: hadist.length > 0 ? hadist : [''],
+                  doa: doa.length > 0 ? doa : [''],
+                  tilawah: tilawah.length > 0 ? tilawah : ['']
+                }
+              };
+              successCount++;
+            } else { failedCount++; }
+          } else { failedCount++; }
+        } else { failedCount++; }
+      }
+      return nextEnrs;
+    });
+    
+    showNotification(`Selesai! ${successCount} Berhasil, ${failedCount} Gagal. (Pastikan klik "Simpan")`);
+    setShowImportHafalanModal(false);
+    setImportHafalanText('');
   };
 
   const handleSaveSubject = async (e) => { e.preventDefault(); const data = { ...subjectFormState, level: subjectTab }; if (!data.id) data.id = 'sub-' + Date.now(); try { await setDoc(docPath('subjects', data.id), data); showNotification("Tersimpan!"); setSubjectView('table'); } catch(e){} };
@@ -629,7 +728,6 @@ export default function App() {
     try { await setDoc(docPath('raporSettings', raporTab), raporSettings[raporTab]); showNotification(`Pengaturan Rapor Jenjang ${raporTab} tersimpan di Cloud!`); } catch(e){}
   };
 
-  // Handle Rombel Siswa: Tambah ke Kelas / Hapus dari Kelas di Cloud
   const handleToggleRombel = async (stdId, targetClassId, currentEnrollment) => {
     try {
       if (currentEnrollment) {
@@ -641,8 +739,16 @@ export default function App() {
     } catch(e) { console.error(e); }
   };
 
+  // Fungsi khusus untuk memperluas kotak teks otomatis ke bawah
+  const autoResizeRef = (el) => {
+    if (el) {
+      setTimeout(() => {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+      }, 0);
+    }
+  };
   const handleTextareaResize = (e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; };
-  const autoResizeRef = (el) => { if (el) setTimeout(() => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }, 0); };
 
   const renderTabs = (currentTab, setTab) => (
     <div className="flex space-x-2 border-b border-gray-200 mb-4 pb-2">
@@ -671,42 +777,45 @@ export default function App() {
     let html = settings.templateHtml || '';
     html = html.replace(/outline:\s*[^;]+;/gi, ''); 
 
+    // Generate Tables
     const subUmum = subjects.filter(s => s.level === level && !s.isLokal).sort((a,b) => (a.urutan || 0) - (b.urutan || 0));
     const subLokal = subjects.filter(s => s.level === level && s.isLokal).sort((a,b) => (a.urutan || 0) - (b.urutan || 0));
     
-    // PEMBARUAN: Arial 10pt dan pengembalian fungsi white-space nowrap agar huruf di tabel tidak terpotong
-    let tNilaiHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black; margin-bottom: 15px; page-break-inside: auto;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 4%;">No</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 18%;">Mata Pelajaran</th><th colspan="2" style="border: 1px solid black; padding: 4px; width: 12%; white-space: nowrap;">Sumatif Lingkup<br/>Materi</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 8%; background-color: #fecaca; white-space: nowrap;">Nilai Akhir<br/>Sumatif</th><th rowspan="2" style="border: 1px solid black; padding: 4px; width: 58%;">Capaian Kompetensi</th></tr><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th style="border: 1px solid black; padding: 4px; width: 6%; white-space: nowrap;">Sumatif 1</th><th style="border: 1px solid black; padding: 4px; width: 6%; white-space: nowrap;">Sumatif 2</th></tr></thead><tbody>`;
+    // PEMBARUAN: Diperketat font 10pt, margin-bottom diperkecil, padding table diperkecil untuk menghemat tempat (Poin 4 & 6)
+    let tNilaiHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important; margin-bottom: 8px; page-break-inside: auto;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 4%;">No</th><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 16%;">Mata Pelajaran</th><th colspan="2" style="border: 1px solid black; padding: 2px; width: 14%;">Sumatif Lingkup<br/>Materi</th><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 6%; background-color: #fecaca;">Nilai<br/>Akhir</th><th rowspan="2" style="border: 1px solid black; padding: 2px; width: 60%;">Capaian Kompetensi</th></tr><tr style="background-color: #f3f4f6; text-align: center; font-weight: bold; page-break-inside: avoid;"><th style="border: 1px solid black; padding: 2px; width: 7%; white-space: nowrap;">Sum 1</th><th style="border: 1px solid black; padding: 2px; width: 7%; white-space: nowrap;">Sum 2</th></tr></thead><tbody>`;
     
     let no = 1;
     const renderRowHTML = (sub) => {
       const n = enr.nilai?.[sub.id] || {sumatif1: '', sumatif2: '', tercapai: '', belumTercapai: ''};
       const s1 = parseFloat(n.sumatif1) || ''; const s2 = parseFloat(n.sumatif2) || '';
       let avg = ''; if (s1 !== '' || s2 !== '') avg = Math.round((Number(s1) + Number(s2)) / (s1 !== '' && s2 !== '' ? 2 : 1));
+      
+      // PEMBARUAN: Padding atas bawah dihilangkan agar lebih rapat, jarak garis putus-putus diperkecil
       let capaianHtml = '';
-      if (n.tercapai && n.belumTercapai) capaianHtml = `<div style="padding-bottom: 4px; border-bottom: 1px dashed black; margin-bottom: 4px;">${n.tercapai}</div><div>${n.belumTercapai}</div>`;
+      if (n.tercapai && n.belumTercapai) capaianHtml = `<div style="padding-bottom: 2px; border-bottom: 1px dashed black; margin-bottom: 2px;">${n.tercapai}</div><div style="padding-top: 2px;">${n.belumTercapai}</div>`;
       else if (n.tercapai) capaianHtml = `<div>${n.tercapai}</div>`;
       else if (n.belumTercapai) capaianHtml = `<div>${n.belumTercapai}</div>`;
       else capaianHtml = `-`;
-      return `<tr style="page-break-inside: avoid;"><td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;">${no++}</td><td style="border: 1px solid black; padding: 4px;">${sub.name}</td><td style="border: 1px solid black; padding: 4px; text-align: center;">${s1}</td><td style="border: 1px solid black; padding: 4px; text-align: center;">${s2}</td><td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; background-color: rgba(254, 202, 202, 0.3);">${avg}</td><td style="border: 1px solid black; padding: 5px 6px; text-align: justify; vertical-align: top; line-height: 1.4;">${capaianHtml}</td></tr>`;
+      
+      return `<tr style="page-break-inside: avoid;"><td style="border: 1px solid black; padding: 2px; text-align: center; font-weight: bold;">${no++}</td><td style="border: 1px solid black; padding: 2px 4px;">${sub.name}</td><td style="border: 1px solid black; padding: 2px; text-align: center;">${s1}</td><td style="border: 1px solid black; padding: 2px; text-align: center;">${s2}</td><td style="border: 1px solid black; padding: 2px; text-align: center; font-weight: bold; background-color: rgba(254, 202, 202, 0.3);">${avg}</td><td style="border: 1px solid black; padding: 3px 4px; text-align: justify; vertical-align: top; line-height: 1.15;">${capaianHtml}</td></tr>`;
     };
     if (subUmum.length === 0 && subLokal.length === 0) tNilaiHtml = '';
     else {
       subUmum.forEach(sub => { tNilaiHtml += renderRowHTML(sub); });
-      if (subLokal.length > 0) { tNilaiHtml += `<tr style="background-color: #f3f4f6; page-break-inside: avoid;"><td colspan="6" style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Muatan Lokal</td></tr>`; subLokal.forEach(sub => { tNilaiHtml += renderRowHTML(sub); }); }
+      if (subLokal.length > 0) { tNilaiHtml += `<tr style="background-color: #f3f4f6; page-break-inside: avoid;"><td colspan="6" style="border: 1px solid black; padding: 2px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Muatan Lokal</td></tr>`; subLokal.forEach(sub => { tNilaiHtml += renderRowHTML(sub); }); }
       tNilaiHtml += '</tbody></table>';
     }
 
     const sp = enr.specialData || { surah: [], hadist: [], doa: [], tilawah: [] };
     const fList = (arr) => { if(!arr || !Array.isArray(arr)) return '-'; const v = arr.filter(i => i.trim() !== ''); return v.length > 0 ? v.join('<br/>') : '-'; };
     
-    // PEMBARUAN: Arial 10pt
-    const tHafalanHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 4px;">HAFALAN</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 4px; width: 60px; font-weight: bold; vertical-align: top;">Surah</td><td style="border: 1px solid black; padding: 4px; vertical-align: top;">${fList(sp.surah)}</td></tr><tr><td style="border: 1px solid black; padding: 4px; font-weight: bold; vertical-align: top;">Hadist</td><td style="border: 1px solid black; padding: 4px; vertical-align: top;">${fList(sp.hadist)}</td></tr><tr><td style="border: 1px solid black; padding: 4px; font-weight: bold; vertical-align: top;">Doa'</td><td style="border: 1px solid black; padding: 4px; vertical-align: top;">${fList(sp.doa)}</td></tr><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 4px;">TILAWAH</th></tr><tr><td colspan="2" style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold; vertical-align: top;">${fList(sp.tilawah)}</td></tr></tbody></table>`;
+    // PEMBARUAN: Font 10pt (Poin 5)
+    const tHafalanHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">HAFALAN</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 2px 4px; width: 60px; font-weight: bold; vertical-align: top;">Surah</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.surah)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; font-weight: bold; vertical-align: top;">Hadist</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.hadist)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; font-weight: bold; vertical-align: top;">Doa'</td><td style="border: 1px solid black; padding: 2px 4px; vertical-align: top;">${fList(sp.doa)}</td></tr><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">TILAWAH</th></tr><tr><td colspan="2" style="border: 1px solid black; padding: 2px 4px; text-align: center; font-weight: bold; vertical-align: top;">${fList(sp.tilawah)}</td></tr></tbody></table>`;
 
     const abs = enr.kehadiran || { sakit: 0, izin: 0, alpa: 0 };
     const fAbs = (val) => (val && Number(val) > 0) ? `${val} hari` : '-';
-    
-    // PEMBARUAN: Arial 10pt
-    const tAbsensiHtml = `<table style="font-family: Arial, sans-serif !important; font-size: 10pt !important; width: 100%; border-collapse: collapse; border: 1px solid black;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 4px;">ABSENSI</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 4px;">Sakit</td><td style="border: 1px solid black; padding: 4px; text-align: center; width: 30%;">${fAbs(abs.sakit)}</td></tr><tr><td style="border: 1px solid black; padding: 4px;">Izin</td><td style="border: 1px solid black; padding: 4px; text-align: center;">${fAbs(abs.izin)}</td></tr><tr><td style="border: 1px solid black; padding: 4px;">Tanpa Keterangan</td><td style="border: 1px solid black; padding: 4px; text-align: center;">${fAbs(abs.alpa)}</td></tr></tbody></table>`;
+    // PEMBARUAN: Font 10pt (Poin 5)
+    const tAbsensiHtml = `<table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-family: Arial, sans-serif !important; font-size: 10pt !important;"><thead style="display: table-header-group;"><tr style="background-color: #f3f4f6;"><th colspan="2" style="border: 1px solid black; padding: 2px;">ABSENSI</th></tr></thead><tbody><tr><td style="border: 1px solid black; padding: 2px 4px; white-space: nowrap;">Sakit</td><td style="border: 1px solid black; padding: 2px 4px; text-align: center; width: 30%;">${fAbs(abs.sakit)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; white-space: nowrap;">Izin</td><td style="border: 1px solid black; padding: 2px 4px; text-align: center;">${fAbs(abs.izin)}</td></tr><tr><td style="border: 1px solid black; padding: 2px 4px; white-space: nowrap;">Tanpa Keterangan</td><td style="border: 1px solid black; padding: 2px 4px; text-align: center;">${fAbs(abs.alpa)}</td></tr></tbody></table>`;
 
     const dataMap = {
       NAMA_SISWA: student.name, NISN: student.nisn, NIS: student.nis,
@@ -846,21 +955,24 @@ export default function App() {
   if (printDataQueue && printDataQueue.length > 0) {
     const paperW = printConfig.paperSize === 'A4' ? '210mm' : '215mm';
     const paperH = printConfig.paperSize === 'A4' ? '297mm' : '330mm';
-    
     const pad = `${printConfig.marginTop}mm ${printConfig.marginRight}mm ${printConfig.marginBottom}mm ${printConfig.marginLeft}mm`;
-    const globalFont = raporSettings[raporTab]?.fontFamily || 'Arial, sans-serif';
 
     return (
-      <div className="bg-gray-800 print:bg-transparent min-h-screen print:min-h-0 font-sans">
+      <div className="bg-gray-800 min-h-screen font-sans">
         <style>{`
+          @page { size: ${paperW} ${paperH}; margin: ${pad} !important; }
           @media print {
-            @page { size: ${paperW} ${paperH}; margin: ${pad} !important; }
-            body, html { margin: 0 !important; padding: 0 !important; background-color: #fff !important; }
-            .print-wrapper { padding: 0 !important; margin: 0 !important; background: transparent !important; }
+            body, html { height: 100%; margin: 0 !important; padding: 0 !important; background-color: #fff !important; overflow: visible; }
+            .print-wrapper { background: none; padding: 0 !important; margin: 0 !important; min-height: auto; }
             
+            /* PENTING: Menghilangkan padding ganda agar tabel tidak terpotong & Kop Surat sejajar (Poin 1 & 3) */
+            /* Menambahkan lebar spesifik agar tidak terdorong flexbox */
             .print-page { 
+              box-sizing: border-box;
               width: 100% !important; 
               max-width: 100% !important;
+              min-width: 100% !important;
+              height: auto !important;
               min-height: auto !important; 
               padding: 0 !important; 
               box-shadow: none !important; 
@@ -868,14 +980,17 @@ export default function App() {
               margin: 0 !important; 
               page-break-after: always; 
               page-break-inside: avoid; 
-              overflow: hidden !important; 
+              overflow: visible !important; 
             }
+            
+            /* PENTING: Menghilangkan blank page di halaman paling akhir (Poin 2) */
             .print-page:last-child { page-break-after: auto; }
             
-            .print-page img { display: inline-block !important; max-width: 100%; } 
+            .print-page img { display: inline-block !important; max-width: 100%; height: auto; } 
 
             .no-print { display: none !important; }
             
+            /* Sembunyikan Watermark Sandbox & Iframe (Poin 4) */
             ::-webkit-scrollbar { display: none !important; }
             * { scrollbar-width: none !important; }
             [class*="codesandbox"],
@@ -904,14 +1019,9 @@ export default function App() {
           </div>
         </div>
 
-        <div className="pt-24 pb-12 print:pt-0 print:pb-0 print-wrapper">
+        <div className="pt-24 pb-12 print-wrapper">
           {printDataQueue.map((enrId) => (
-            <div 
-               key={enrId} 
-               className="print-page bg-white shadow-2xl mx-auto relative overflow-visible mb-8 [&_img]:inline-block" 
-               style={{ width: paperW, minHeight: paperH, padding: pad, fontFamily: globalFont, fontSize: '11pt', boxSizing: 'border-box' }} 
-               dangerouslySetInnerHTML={{ __html: compileHtmlRapor(enrId) }} 
-            />
+            <div key={enrId} className="print-page bg-white shadow-2xl mx-auto relative overflow-visible mb-8" style={{ width: paperW, minHeight: paperH, padding: pad, fontFamily: 'Arial, sans-serif', boxSizing: 'border-box' }} dangerouslySetInnerHTML={{ __html: compileHtmlRapor(enrId) }} />
           ))}
         </div>
       </div>
@@ -1413,7 +1523,7 @@ export default function App() {
                         <p className="text-sm text-gray-600 mb-4">Silakan <b>Copy (Salin)</b> data dari Microsoft Excel lalu <b>Paste (Tempel)</b> ke dalam kotak di bawah ini.</p>
                         <p className="text-xs font-bold text-gray-700 bg-yellow-50 p-2 border border-yellow-200 rounded mb-2">Pastikan format urutan kolom Excel Anda: NAMA | L/P | NISN | NIS</p>
                         <textarea 
-                           className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre"
+                           className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre flex-nowrap"
                            placeholder="ANDI M&#9;L&#9;0123456789&#9;1001&#10;SITI A&#9;P&#9;0123456790&#9;1002"
                            value={importText}
                            onChange={e => setImportText(e.target.value)}
@@ -1616,8 +1726,8 @@ export default function App() {
               {renderTabs(raporTab, setRaporTab)}
 
               {raporViewMode === 'settings' && (
-                <form onSubmit={handleSaveRaporSettings} className="space-y-4 max-w-4xl bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <form onSubmit={handleSaveRaporSettings} className="space-y-4 max-w-3xl bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Tahun Ajaran</label>
                       <input type="text" value={raporSettings[raporTab].tahunAjaran} onChange={e => setRaporSettings({...raporSettings, [raporTab]: {...raporSettings[raporTab], tahunAjaran: e.target.value}})} className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="e.g., 2025/2026" />
@@ -1635,16 +1745,6 @@ export default function App() {
                     <div>
                       <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">Tanggal Cetak</label>
                       <input type="date" value={raporSettings[raporTab].tanggalCetak} onChange={e => setRaporSettings({...raporSettings, [raporTab]: {...raporSettings[raporTab], tanggalCetak: e.target.value}})} className="w-full p-2 text-sm border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider text-blue-700">Font Global Rapor</label>
-                      <select value={raporSettings[raporTab].fontFamily || 'Arial, sans-serif'} onChange={e => setRaporSettings({...raporSettings, [raporTab]: {...raporSettings[raporTab], fontFamily: e.target.value}})} className="w-full p-2 text-sm border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 font-bold">
-                        <option value="Arial, Helvetica, sans-serif">Arial</option>
-                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                        <option value="'Arial Narrow', 'PT Sans Narrow', sans-serif">Arial Narrow / PT Sans</option>
-                        <option value="Calibri, sans-serif">Calibri</option>
-                        <option value="'Courier New', Courier, monospace">Courier New</option>
-                      </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
@@ -1713,7 +1813,14 @@ export default function App() {
                   </div>
                   <div 
                     className="bg-white border border-gray-300 shadow-2xl origin-top transform scale-90 md:scale-100 text-black mx-auto relative overflow-visible print:overflow-visible print:shadow-none print:border-none"
-                    style={{ width: printConfig.paperSize === 'A4' ? '210mm' : '215mm', minHeight: printConfig.paperSize === 'A4' ? '297mm' : '330mm', padding: `${printConfig.marginTop}mm ${printConfig.marginRight}mm ${printConfig.marginBottom}mm ${printConfig.marginLeft}mm`, fontFamily: raporSettings[raporTab]?.fontFamily || 'Arial, sans-serif', fontSize: '11pt', boxSizing: 'border-box' }}
+                    style={{ 
+                      width: printConfig.paperSize === 'A4' ? '210mm' : '215mm', 
+                      minWidth: printConfig.paperSize === 'A4' ? '210mm' : '215mm', 
+                      minHeight: printConfig.paperSize === 'A4' ? '297mm' : '330mm', 
+                      padding: `${printConfig.marginTop}mm ${printConfig.marginRight}mm ${printConfig.marginBottom}mm ${printConfig.marginLeft}mm`, 
+                      fontFamily: 'Arial, sans-serif', 
+                      boxSizing: 'border-box' 
+                    }}
                     dangerouslySetInnerHTML={{ __html: getPreviewTemplateHTML() }}
                   />
                 </div>
@@ -1822,7 +1929,15 @@ export default function App() {
                          <input type="text" disabled value={cpFormState.semester} className="w-full p-2.5 border rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed text-center font-bold" />
                          <input type="text" disabled value={cpFormState.fase ? `Fase ${cpFormState.fase}` : 'Pilih Kelas Dulu'} className="w-full p-2.5 border rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed text-center font-bold" />
                       </div>
-                      <textarea required value={cpFormState.deskripsi} onChange={e => setCpFormState({...cpFormState, deskripsi: e.target.value})} className="w-full p-2.5 border rounded-lg outline-none min-h-[100px]" placeholder="Ketik kalimat Capaian Kompetensi (CP)..." />
+                      <textarea 
+                        required 
+                        ref={autoResizeRef}
+                        onInput={handleTextareaResize}
+                        value={cpFormState.deskripsi} 
+                        onChange={e => setCpFormState({...cpFormState, deskripsi: e.target.value})} 
+                        className="w-full p-2.5 border rounded-lg outline-none min-h-[100px] resize-none overflow-hidden" 
+                        placeholder="Ketik kalimat Capaian Kompetensi (CP)..." 
+                      />
                       
                       <div className="flex space-x-3 pt-4"><button type="submit" className="bg-blue-600 text-white px-5 py-2 rounded-lg">Simpan CP</button><button type="button" onClick={() => setCpView('table')} className="bg-gray-200 px-5 py-2 rounded-lg">Batal</button></div>
                     </form>
@@ -1863,7 +1978,6 @@ export default function App() {
               : (allowedSubjects.length > 0 ? allowedSubjects[0].id : null);
               
             const myEnrs = displayClass ? activeEnrollments.filter(e => e.classId === displayClass.id) : [];
-            const classFase = displayClass ? getFase(displayClass.tingkat) : 'A';
             const availableCps = cps.filter(c => c.subjectId === currentSubjectId && c.classId === displayClass?.id && c.tahunAjaran === activeTA && c.semester === activeSemester);
 
             return (
@@ -1905,7 +2019,7 @@ export default function App() {
                             <p className="mt-2 text-xs">Sistem akan memasukkan nilai tersebut berdasarkan ketepatan <b>NISN</b> siswa.</p>
                           </div>
                           <textarea 
-                             className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre"
+                             className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre flex-nowrap"
                              placeholder="0123456789&#9;85&#9;90&#9;Mencapai kompetensi dalam hal...&#9;Perlu bimbingan dalam hal..."
                              value={importNilaiText}
                              onChange={e => setImportNilaiText(e.target.value)}
@@ -2048,8 +2162,20 @@ export default function App() {
                                 
                                 {cpInputMode === 'manual' ? (
                                   <>
-                                    <td className="p-2 text-center border-r border-gray-100 align-top"><textarea className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px] resize-none overflow-hidden text-xs leading-relaxed bg-green-50/30" onInput={handleTextareaResize} value={stdNilai.tercapai} onChange={(e) => handleGradeChange(enr.id, currentSubjectId, 'tercapai', e.target.value)} placeholder="Ketik manual capaian..." /></td>
-                                    <td className="p-2 text-center align-top"><textarea className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px] resize-none overflow-hidden text-xs leading-relaxed bg-red-50/30" onInput={handleTextareaResize} value={stdNilai.belumTercapai} onChange={(e) => handleGradeChange(enr.id, currentSubjectId, 'belumTercapai', e.target.value)} placeholder="Ketik manual capaian..." /></td>
+                                    <td className="p-2 text-center border-r border-gray-100 align-top">
+                                      <textarea 
+                                        ref={autoResizeRef} onInput={handleTextareaResize} 
+                                        className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px] resize-none overflow-hidden text-xs leading-relaxed bg-green-50/30" 
+                                        value={stdNilai.tercapai} onChange={(e) => handleGradeChange(enr.id, currentSubjectId, 'tercapai', e.target.value)} placeholder="Ketik manual capaian..." 
+                                      />
+                                    </td>
+                                    <td className="p-2 text-center align-top">
+                                      <textarea 
+                                        ref={autoResizeRef} onInput={handleTextareaResize} 
+                                        className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[60px] resize-none overflow-hidden text-xs leading-relaxed bg-red-50/30" 
+                                        value={stdNilai.belumTercapai} onChange={(e) => handleGradeChange(enr.id, currentSubjectId, 'belumTercapai', e.target.value)} placeholder="Ketik manual capaian..." 
+                                      />
+                                    </td>
                                   </>
                                 ) : (
                                   <>
@@ -2089,8 +2215,37 @@ export default function App() {
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-bold text-xl flex items-center"><BookOpen className="mr-2 text-purple-600"/> Input Hafalan & Tilawah {displayClass ? `- ${displayClass.name}` : ''}</h3>
-                  {displayClass && <button onClick={() => handleSaveBulkEnrollments(displayClass.id)} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium hover:bg-purple-700"><Save size={18} className="mr-2" /> Simpan Data</button>}
+                  <div className="flex space-x-2">
+                    {displayClass && <button onClick={() => setShowImportHafalanModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-green-700 shadow-md"><FileUp size={18} className="mr-2" /> Import Excel</button>}
+                    {displayClass && <button onClick={() => handleSaveBulkEnrollments(displayClass.id)} className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-purple-700 shadow-md"><Save size={18} className="mr-2" /> Simpan</button>}
+                  </div>
                 </div>
+
+                {showImportHafalanModal && displayClass && (
+                   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+                       <div className="bg-green-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold text-lg flex items-center"><FileUp className="mr-2"/> Import Hafalan & Tilawah - {displayClass.name}</h3><button onClick={() => setShowImportHafalanModal(false)}>X</button></div>
+                       <div className="p-6 flex-1 overflow-y-auto">
+                          <p className="text-sm text-gray-600 mb-4">Silakan <b>Copy (Salin)</b> data dari Microsoft Excel lalu <b>Paste (Tempel)</b> ke dalam kotak di bawah ini.</p>
+                          <div className="bg-yellow-50 p-3 border border-yellow-200 rounded-lg mb-4 text-sm text-yellow-800">
+                            <p className="font-bold mb-1">PENTING! Format urutan 5 kolom Excel harus persis seperti ini:</p>
+                            <p className="font-mono bg-white p-2 rounded border border-yellow-300">NISN | Surah | Hadist | Doa | Tilawah</p>
+                            <p className="mt-2 text-xs">Untuk data yang lebih dari 1, pisahkan dengan tanda koma. Contoh di excel: <b>Juz 30, Al-Mulk</b></p>
+                          </div>
+                          <textarea 
+                             className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre flex-nowrap"
+                             placeholder="0123456789&#9;An-Naba, Al-Mulk&#9;Hadist Niat, Hadist Senyum&#9;Doa Tidur&#9;Wafa 5"
+                             value={importHafalanText}
+                             onChange={e => setImportHafalanText(e.target.value)}
+                          ></textarea>
+                       </div>
+                       <div className="p-4 border-t bg-gray-50 flex justify-end space-x-3">
+                          <button onClick={() => setShowImportHafalanModal(false)} className="px-5 py-2 rounded-lg bg-gray-200 font-bold text-gray-700">Batal</button>
+                          <button onClick={() => handleImportHafalanSubmit(displayClass.id)} className="px-5 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700">Proses Import</button>
+                       </div>
+                     </div>
+                   </div>
+                )}
 
                 {isAdmin && (
                   <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-purple-50 rounded-xl border border-purple-100">
@@ -2162,8 +2317,37 @@ export default function App() {
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-bold text-xl flex items-center"><Users className="mr-2 text-blue-600"/> Kehadiran Siswa {activeClass ? `- ${activeClass.name}` : ''}</h3>
-                  {activeClass && <button onClick={() => handleSaveBulkEnrollments(activeClass.id)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium hover:bg-blue-700"><Save size={18} className="mr-2" /> Simpan</button>}
+                  <div className="flex space-x-2">
+                    {activeClass && <button onClick={() => setShowImportKehadiranModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-green-700 shadow-md"><FileUp size={18} className="mr-2" /> Import Excel</button>}
+                    {activeClass && <button onClick={() => handleSaveBulkEnrollments(activeClass.id)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-blue-700 shadow-md"><Save size={18} className="mr-2" /> Simpan</button>}
+                  </div>
                 </div>
+
+                {showImportKehadiranModal && activeClass && (
+                   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+                       <div className="bg-green-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold text-lg flex items-center"><FileUp className="mr-2"/> Import Kehadiran - {activeClass.name}</h3><button onClick={() => setShowImportKehadiranModal(false)}>X</button></div>
+                       <div className="p-6 flex-1 overflow-y-auto">
+                          <p className="text-sm text-gray-600 mb-4">Silakan <b>Copy (Salin)</b> data dari Microsoft Excel lalu <b>Paste (Tempel)</b> ke dalam kotak di bawah ini.</p>
+                          <div className="bg-yellow-50 p-3 border border-yellow-200 rounded-lg mb-4 text-sm text-yellow-800">
+                            <p className="font-bold mb-1">PENTING! Format urutan 4 kolom Excel harus persis seperti ini:</p>
+                            <p className="font-mono bg-white p-2 rounded border border-yellow-300">NISN | Sakit (Angka) | Izin (Angka) | Tanpa Keterangan (Angka)</p>
+                          </div>
+                          <textarea 
+                             className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre flex-nowrap"
+                             placeholder="0123456789&#9;0&#9;2&#9;0"
+                             value={importKehadiranText}
+                             onChange={e => setImportKehadiranText(e.target.value)}
+                          ></textarea>
+                       </div>
+                       <div className="p-4 border-t bg-gray-50 flex justify-end space-x-3">
+                          <button onClick={() => setShowImportKehadiranModal(false)} className="px-5 py-2 rounded-lg bg-gray-200 font-bold text-gray-700">Batal</button>
+                          <button onClick={() => handleImportKehadiranSubmit(activeClass.id)} className="px-5 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700">Proses Import</button>
+                       </div>
+                     </div>
+                   </div>
+                )}
+
                 {!activeClass ? (
                   <div className="text-center py-12 text-gray-500"><Users size={48} className="mx-auto text-gray-300 mb-4" /><p>Anda tidak terdaftar sebagai wali kelas.</p></div>
                 ) : (
@@ -2171,7 +2355,7 @@ export default function App() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-gray-100 text-gray-700 text-sm border-b border-gray-300">
-                          <th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold w-12 text-center align-middle">No</th><th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold align-middle">Nama Siswa</th><th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold text-center align-middle">JK</th><th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold align-middle">NIS</th><th colSpan="3" className="p-2 border-b border-gray-200 font-semibold text-center">Kehadiran (Hari)</th>
+                          <th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold w-12 text-center align-middle">No</th><th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold align-middle">Nama Siswa</th><th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold text-center align-middle">JK</th><th rowSpan="2" className="p-3 border-r border-gray-200 font-semibold align-middle">NISN</th><th colSpan="3" className="p-2 border-b border-gray-200 font-semibold text-center">Kehadiran (Hari)</th>
                         </tr>
                         <tr className="bg-gray-100 text-gray-700 text-sm border-b border-gray-300"><th className="p-2 border-r border-gray-200 font-semibold text-center w-24">Sakit</th><th className="p-2 border-r border-gray-200 font-semibold text-center w-24">Izin</th><th className="p-2 font-semibold text-center w-24">Tanpa Ket.</th></tr>
                       </thead>
@@ -2183,7 +2367,7 @@ export default function App() {
                             const std = students.find(s => s.id === enr.studentId) || { name: '-', jk: '-', nis: '-' };
                             return (
                               <tr key={enr.id} className="border-b hover:bg-gray-50 text-sm">
-                                <td className="p-3 text-center border-r border-gray-100">{idx + 1}</td><td className="p-3 font-medium text-gray-800 border-r border-gray-100">{std.name}</td><td className="p-3 text-center border-r border-gray-100">{std.jk}</td><td className="p-3 text-gray-600 border-r border-gray-100">{std.nis}</td>
+                                <td className="p-3 text-center border-r border-gray-100">{idx + 1}</td><td className="p-3 font-medium text-gray-800 border-r border-gray-100">{std.name}</td><td className="p-3 text-center border-r border-gray-100">{std.jk}</td><td className="p-3 text-gray-600 border-r border-gray-100">{std.nisn}</td>
                                 <td className="p-2 text-center border-r border-gray-100"><input type="number" min="0" className="w-16 p-1.5 text-center border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value={enr.kehadiran?.sakit || ''} onChange={(e) => handleAttendanceChange(enr.id, 'sakit', e.target.value)} /></td>
                                 <td className="p-2 text-center border-r border-gray-100"><input type="number" min="0" className="w-16 p-1.5 text-center border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value={enr.kehadiran?.izin || ''} onChange={(e) => handleAttendanceChange(enr.id, 'izin', e.target.value)} /></td>
                                 <td className="p-2 text-center"><input type="number" min="0" className="w-16 p-1.5 text-center border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value={enr.kehadiran?.alpa || ''} onChange={(e) => handleAttendanceChange(enr.id, 'alpa', e.target.value)} /></td>
@@ -2205,8 +2389,37 @@ export default function App() {
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-bold text-xl flex items-center"><CheckSquare className="mr-2 text-blue-600"/> Karakter & Catatan Wali Kelas {activeClass ? `- ${activeClass.name}` : ''}</h3>
-                  {activeClass && <button onClick={() => handleSaveBulkEnrollments(activeClass.id)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium hover:bg-blue-700"><Save size={18} className="mr-2" /> Simpan Catatan</button>}
+                  <div className="flex space-x-2">
+                    {activeClass && <button onClick={() => setShowImportCatatanModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-bold hover:bg-green-700 shadow-md"><FileUp size={18} className="mr-2" /> Import Excel</button>}
+                    {activeClass && <button onClick={() => handleSaveBulkEnrollments(activeClass.id)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium hover:bg-blue-700 shadow-md"><Save size={18} className="mr-2" /> Simpan Catatan</button>}
+                  </div>
                 </div>
+
+                {showImportCatatanModal && activeClass && (
+                   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+                       <div className="bg-green-600 p-4 flex justify-between items-center text-white"><h3 className="font-bold text-lg flex items-center"><FileUp className="mr-2"/> Import Karakter & Catatan - {activeClass.name}</h3><button onClick={() => setShowImportCatatanModal(false)}>X</button></div>
+                       <div className="p-6 flex-1 overflow-y-auto">
+                          <p className="text-sm text-gray-600 mb-4">Silakan <b>Copy (Salin)</b> data dari Microsoft Excel lalu <b>Paste (Tempel)</b> ke dalam kotak di bawah ini.</p>
+                          <div className="bg-yellow-50 p-3 border border-yellow-200 rounded-lg mb-4 text-sm text-yellow-800">
+                            <p className="font-bold mb-1">PENTING! Format urutan 3 kolom Excel harus persis seperti ini:</p>
+                            <p className="font-mono bg-white p-2 rounded border border-yellow-300">NISN | Teks Karakter | Teks Catatan Wali Kelas</p>
+                          </div>
+                          <textarea 
+                             className="w-full h-64 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm whitespace-pre flex-nowrap"
+                             placeholder="0123456789&#9;Ananda adalah anak yang...&#9;Tingkatkan prestasimu!"
+                             value={importCatatanText}
+                             onChange={e => setImportCatatanText(e.target.value)}
+                          ></textarea>
+                       </div>
+                       <div className="p-4 border-t bg-gray-50 flex justify-end space-x-3">
+                          <button onClick={() => setShowImportCatatanModal(false)} className="px-5 py-2 rounded-lg bg-gray-200 font-bold text-gray-700">Batal</button>
+                          <button onClick={() => handleImportCatatanSubmit(activeClass.id)} className="px-5 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700">Proses Import</button>
+                       </div>
+                     </div>
+                   </div>
+                )}
+
                 {!activeClass ? (
                   <div className="text-center py-12 text-gray-500"><CheckSquare size={48} className="mx-auto text-gray-300 mb-4" /><p>Anda tidak terdaftar sebagai wali kelas.</p></div>
                 ) : (
@@ -2222,8 +2435,20 @@ export default function App() {
                             return (
                               <tr key={enr.id} className="border-b hover:bg-gray-50 text-sm">
                                 <td className="p-3 text-center border-r border-gray-100 align-top">{idx + 1}</td><td className="p-3 font-medium text-gray-800 border-r border-gray-100 align-top">{std.name}</td><td className="p-3 text-center border-r border-gray-100 align-top">{std.jk}</td>
-                                <td className="p-2 border-r border-gray-100 align-top"><textarea className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[50px] resize-none overflow-hidden text-sm leading-relaxed bg-yellow-50/30" onInput={handleTextareaResize} value={enr.karakter || ''} onChange={(e) => handleCatatanChange(enr.id, 'karakter', e.target.value)} placeholder="Ketik deskripsi karakter siswa..." /></td>
-                                <td className="p-2 align-top"><textarea className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[50px] resize-none overflow-hidden text-sm leading-relaxed bg-green-50/30" onInput={handleTextareaResize} value={enr.catatanWalas || ''} onChange={(e) => handleCatatanChange(enr.id, 'catatanWalas', e.target.value)} placeholder="Ketik pesan / evaluasi dari wali kelas..." /></td>
+                                <td className="p-2 border-r border-gray-100 align-top">
+                                  <textarea 
+                                    ref={autoResizeRef} onInput={handleTextareaResize}
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[50px] resize-none overflow-hidden text-sm leading-relaxed bg-yellow-50/30" 
+                                    value={enr.karakter || ''} onChange={(e) => handleCatatanChange(enr.id, 'karakter', e.target.value)} placeholder="Ketik deskripsi karakter siswa..." 
+                                  />
+                                </td>
+                                <td className="p-2 align-top">
+                                  <textarea 
+                                    ref={autoResizeRef} onInput={handleTextareaResize}
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 min-h-[50px] resize-none overflow-hidden text-sm leading-relaxed bg-green-50/30" 
+                                    value={enr.catatanWalas || ''} onChange={(e) => handleCatatanChange(enr.id, 'catatanWalas', e.target.value)} placeholder="Ketik pesan / evaluasi dari wali kelas..." 
+                                  />
+                                </td>
                               </tr>
                             );
                           })
